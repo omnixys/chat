@@ -1,26 +1,25 @@
 import strawberry
 from strawberry.types import Info
 
-from chat.api.graphql.context import get_message_service
+from chat.api.graphql.context import get_message_service, get_principal
 from chat.api.graphql.types.message import Message
-from chat.domain.enums import ChannelType
 
 
 @strawberry.type
 class MessageMutation:
-
     @strawberry.mutation
     async def send_message(
         self,
         info: Info,
         conversation_id: strawberry.ID,
-        sender_id: str,
         body: str,
-        channel: ChannelType = ChannelType.IN_APP,
     ) -> Message:
         service = get_message_service(info)
+        principal = await get_principal(info)
         m = await service.send_message(
-            str(conversation_id), sender_id, body, channel=channel,
+            str(conversation_id),
+            principal.user_id,
+            body,
         )
         return Message(
             id=strawberry.ID(m.id),

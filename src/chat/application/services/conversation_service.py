@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import re
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from chat.application.ports.conversation_repository import ConversationRepository
 from chat.application.ports.message_repository import MessageRepository
 from chat.application.ports.read_state_repository import ReadStateRepository
+from chat.domain.enums import ChannelType
 from chat.domain.errors import (
     ConversationNotFoundError,
     NotParticipantError,
@@ -14,7 +17,6 @@ from chat.domain.models.conversation import Conversation, build_direct_participa
 
 
 class ConversationService:
-
     def __init__(
         self,
         session: AsyncSession,
@@ -52,6 +54,27 @@ class ConversationService:
         conversation.participant_ids = [user_a_id, user_b_id]
         return conversation
 
+    async def create_whatsapp_conversation(
+        self, owner_user_id: str, phone_number: str, display_name: str | None = None
+    ) -> Conversation:
+        address = normalize_e164(phone_number)
+        existing = await self.conversation_repo.find_by_external_address(address)
+        if existing is not None:
+            if not await self.conversation_repo.is_participant(existing.id, owner_user_id):
+                raise ValueError("WhatsApp contact already belongs to another conversation")
+            return existing
+        conversation = Conversation(
+            participant_pair_key=f"whatsapp:{address}",
+            channel=ChannelType.WHATSAPP,
+            external_address=address,
+            external_display_name=display_name.strip() if display_name else None,
+        )
+        conversation = await self.conversation_repo.save(conversation)
+        await self.conversation_repo.add_participant(conversation.id, owner_user_id)
+        await self.session.commit()
+        conversation.participant_ids = [owner_user_id]
+        return conversation
+
     async def get_conversation(self, conversation_id: str, user_id: str) -> Conversation:
         conversation = await self.conversation_repo.find_by_id(conversation_id)
         if conversation is None:
@@ -87,9 +110,7 @@ class ConversationService:
 
             read_state = await self.read_state_repo.find(conv.id, user_id)
             last_read_at = read_state.last_read_at if read_state else None
-            conv.unread_count = await self.message_repo.count_unread(
-                conv.id, user_id, last_read_at
-            )
+            conv.unread_count = await self.message_repo.count_unread(conv.id, user_id, last_read_at)
 
             participant_ids = await self.conversation_repo.get_participant_ids(conv.id)
             conv.participant_ids = participant_ids
@@ -100,3 +121,10 @@ class ConversationService:
     async def verify_participant(self, conversation_id: str, user_id: str) -> None:
         if not await self.conversation_repo.is_participant(conversation_id, user_id):
             raise NotParticipantError(user_id, conversation_id)
+
+
+def normalize_e164(value: str) -> str:
+    normalized = re.sub(r"[\s().-]", "", value.strip())
+    if not re.fullmatch(r"\+[1-9]\d{7,14}", normalized):
+        raise ValueError("phone number must use E.164 format")
+    return normalized

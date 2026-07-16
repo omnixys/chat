@@ -4,7 +4,6 @@ from chat.domain.models.communication_channel import CommunicationChannel
 
 
 class MessageRouter:
-
     def __init__(self, adapters: dict[ChannelType, ChannelAdapter]) -> None:
         self._adapters = adapters
 

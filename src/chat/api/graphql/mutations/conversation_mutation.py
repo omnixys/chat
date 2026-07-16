@@ -1,7 +1,7 @@
 import strawberry
 from strawberry.types import Info
 
-from chat.api.graphql.context import get_conversation_service, get_read_state_service
+from chat.api.graphql.context import get_conversation_service, get_principal, get_read_state_service
 from chat.api.graphql.types.conversation import Conversation, Participant
 
 
@@ -11,22 +11,47 @@ def _participants_from_ids(ids: list[str]) -> list[Participant]:
 
 @strawberry.type
 class ConversationMutation:
-
     @strawberry.mutation
-    async def create_direct_conversation(
+    async def create_in_app_conversation(
         self,
         info: Info,
-        user_a_id: str,
-        user_b_id: str,
+        participant_user_id: str,
     ) -> Conversation:
         service = get_conversation_service(info)
-        c = await service.create_direct_conversation(user_a_id, user_b_id)
+        principal = await get_principal(info)
+        c = await service.create_direct_conversation(principal.user_id, participant_user_id)
         return Conversation(
             id=strawberry.ID(c.id),
             participants=_participants_from_ids(c.participant_ids),
             last_message=c.last_message,
             last_message_at=c.last_message_at,
             unread_count=c.unread_count,
+            channel=c.channel,
+            external_address=c.external_address,
+            external_display_name=c.external_display_name,
+        )
+
+    @strawberry.mutation
+    async def create_whatsapp_conversation(
+        self,
+        info: Info,
+        phone_number: str,
+        display_name: str | None = None,
+    ) -> Conversation:
+        service = get_conversation_service(info)
+        principal = await get_principal(info)
+        c = await service.create_whatsapp_conversation(
+            principal.user_id, phone_number, display_name
+        )
+        return Conversation(
+            id=strawberry.ID(c.id),
+            participants=_participants_from_ids(c.participant_ids),
+            last_message=c.last_message,
+            last_message_at=c.last_message_at,
+            unread_count=c.unread_count,
+            channel=c.channel,
+            external_address=c.external_address,
+            external_display_name=c.external_display_name,
         )
 
     @strawberry.mutation
@@ -34,7 +59,7 @@ class ConversationMutation:
         self,
         info: Info,
         conversation_id: strawberry.ID,
-        user_id: str,
     ) -> bool:
         service = get_read_state_service(info)
-        return await service.mark_read(str(conversation_id), user_id)
+        principal = await get_principal(info)
+        return await service.mark_read(str(conversation_id), principal.user_id)

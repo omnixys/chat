@@ -1,45 +1,99 @@
 [project]
-name = "omnixys-chat"
-version = "0.1.0"
-description = "Omnixys Chat Service – Isolated Prototype with GraphQL Subscriptions"
-requires-python = ">=3.13"
+name = "chat"
+version = "0.2.0"
+description = "Omnixys Chat Service"
+requires-python = ">=3.14"
 dependencies = [
-    "fastapi>=0.115.0",
-    "strawberry-graphql[fastapi,asgi]>=0.260.0",
-    "sqlalchemy[asyncio]>=2.0.0",
-    "asyncpg>=0.30.0",
-    "alembic>=1.14.0",
-    "pydantic>=2.0.0",
-    "pydantic-settings>=2.0.0",
-    "hypercorn>=0.17.0",
+    "fastapi>=0.137.1",
+    "hypercorn>=0.18.0",
+    "strawberry-graphql[fastapi]>=0.316.0",
+    "sqlalchemy[asyncio]>=2.0.51",
+    "asyncpg>=0.31.0",
+    "alembic>=1.18.4",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.1",
+    "python-multipart>=0.0.20",
+    "httpx>=0.28.1",
+    "redis>=5.2.0",
+    "PyJWT[crypto]>=2.10.0",
+    "omnixys-commons",
+    "omnixys-config",
+    "omnixys-database",
+    "omnixys-observability",
+    "omnixys-cache",
 ]
 
 [project.scripts]
 chat = "chat.main:run"
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/chat"]
+
 [dependency-groups]
 dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.25.0",
-    "httpx>=0.28.0",
-    "websockets>=15.0.0",
+    "ruff>=0.15.17",
+    "mypy>=1.18.2",
+    "pytest>=9.1.0",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
     "aiosqlite>=0.20.0",
-    "ruff>=0.9.0",
+    "respx>=0.22.0",
 ]
 
-[tool.uv]
-package = true
+[tool.uv.sources]
+omnixys-commons = { url = "https://github.com/omnixys/commons-python/releases/download/v1.0.0/omnixys_commons-1.0.0-py3-none-any.whl" }
+omnixys-config = { url = "https://github.com/omnixys/config-python/releases/download/v1.0.0/omnixys_config-1.0.0-py3-none-any.whl" }
+omnixys-database = { url = "https://github.com/omnixys/database-python/releases/download/v1.0.0/omnixys_database-1.0.0-py3-none-any.whl" }
+omnixys-observability = { url = "https://github.com/omnixys/observability-python/releases/download/v1.0.0/omnixys_observability-1.0.0-py3-none-any.whl" }
+omnixys-cache = { url = "https://github.com/omnixys/cache-python/releases/download/v1.0.0/omnixys_cache-1.0.0-py3-none-any.whl" }
 
 [tool.ruff]
-target-version = "py313"
-line-length = 100
+line-length = 120   
+target-version = "py314"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP"]
+select = ["ALL"]
 
-[tool.ruff.format]
-quote-style = "double"
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "ANN101", "ANN401", "S101",
+    "T20", "FBT", "D", "INP001",
+]
+"src/**" = [
+    "D", "ANN401", "ARG002", "S104", "S105", "S107",
+]
+"src/chat/domain/**" = [
+    "SLF001",
+]
+"src/chat/application/**" = [
+    "SLF001",
+]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+warn_unused_configs = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+
+[[tool.mypy.overrides]]
+module = [
+    "opentelemetry.*",
+    "redis.*",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 testpaths = ["src/chat/tests"]
+pythonpath = ["src"]

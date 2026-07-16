@@ -8,7 +8,6 @@ from chat.domain.models.message import Message
 
 
 class InAppChannelAdapter(ChannelAdapter):
-
     def __init__(self, realtime: RealtimePublisher) -> None:
         self._realtime = realtime
 

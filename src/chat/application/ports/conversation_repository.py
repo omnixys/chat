@@ -4,7 +4,6 @@ from chat.domain.models.conversation import Conversation
 
 
 class ConversationRepository(ABC):
-
     @abstractmethod
     async def find_by_participant_pair_key(self, key: str) -> Conversation | None: ...
 
@@ -13,6 +12,9 @@ class ConversationRepository(ABC):
 
     @abstractmethod
     async def find_by_user_id(self, user_id: str) -> list[Conversation]: ...
+
+    @abstractmethod
+    async def find_by_external_address(self, address: str) -> Conversation | None: ...
 
     @abstractmethod
     async def save(self, conversation: Conversation) -> Conversation: ...

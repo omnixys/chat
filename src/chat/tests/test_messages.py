@@ -7,7 +7,6 @@ from chat.domain.errors import EmptyMessageError, NotParticipantError
 
 
 class TestSendMessage:
-
     async def test_send_and_query_message(
         self,
         conversation_service: ConversationService,
@@ -59,7 +58,6 @@ class TestSendMessage:
 
 
 class TestReadMessages:
-
     async def test_non_participant_cannot_read(
         self,
         conversation_service: ConversationService,
@@ -96,7 +94,6 @@ class TestReadMessages:
 
 
 class TestUnreadCount:
-
     async def test_unread_count_increases(
         self,
         conversation_service: ConversationService,

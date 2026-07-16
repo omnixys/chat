@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 
 
 class PresenceService(ABC):
-
     @abstractmethod
     async def set_online(self, user_id: str) -> None: ...
 
@@ -14,7 +13,6 @@ class PresenceService(ABC):
 
 
 class NullPresenceService(PresenceService):
-
     async def set_online(self, user_id: str) -> None:
         pass
 

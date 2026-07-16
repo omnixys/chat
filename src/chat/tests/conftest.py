@@ -15,7 +15,7 @@ from chat.application.services.read_state_service import ReadStateService
 from chat.domain.enums import ChannelType
 from chat.infrastructure.adapters.default_delivery_policy import DefaultDeliveryPolicy
 from chat.infrastructure.adapters.in_app_channel_adapter import InAppChannelAdapter
-from chat.infrastructure.db.models import Base
+from chat.infrastructure.db.models import Base  # noqa: F401
 from chat.infrastructure.db.repositories.conversation_repository import (
     SqlAlchemyConversationRepository,
 )
@@ -34,7 +34,7 @@ session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_comm
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def _create_tables():
+async def _create_tables() -> AsyncGenerator[None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
@@ -72,9 +72,11 @@ async def realtime() -> RealtimePublisher:
 @pytest_asyncio.fixture
 async def dispatcher(realtime: RealtimePublisher) -> MessageDispatcher:
     in_app_adapter = InAppChannelAdapter(realtime)
-    router = MessageRouter({
-        ChannelType.IN_APP: in_app_adapter,
-    })
+    router = MessageRouter(
+        {
+            ChannelType.IN_APP: in_app_adapter,
+        }
+    )
     policy = DefaultDeliveryPolicy()
     return MessageDispatcher(policy, router)
 

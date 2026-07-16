@@ -11,7 +11,6 @@ from chat.infrastructure.realtime.in_memory_event_bus import InMemoryEventBus
 
 
 class TestEventBus:
-
     async def test_publish_and_subscribe(self, realtime: InMemoryEventBus) -> None:
         event = MessageCreatedEvent(
             message_id="msg-1",
@@ -24,11 +23,12 @@ class TestEventBus:
             created_at=None,  # type: ignore[arg-type]
         )
 
-        async def subscriber():
+        async def subscriber() -> MessageCreatedEvent:
             async for e in realtime.subscribe("user:rachel"):
                 return e
+            raise AssertionError("unreachable")
 
-        async def publisher():
+        async def publisher() -> None:
             await asyncio.sleep(0.05)
             await realtime.publish("user:rachel", event)
 
@@ -39,10 +39,11 @@ class TestEventBus:
 
     async def test_subscription_cleanup_after_disconnect(self, realtime: InMemoryEventBus) -> None:
 
-        async def subscriber():
+        async def subscriber() -> MessageCreatedEvent:
             gen = realtime.subscribe("user:rachel")
             async for m in gen:
                 return m
+            raise AssertionError("unreachable")
 
         task = asyncio.create_task(subscriber())
         await asyncio.sleep(0.05)
@@ -65,7 +66,6 @@ class TestEventBus:
 
 
 class TestEndToEndRealtime:
-
     async def test_delivers_to_both_participants(
         self,
         conversation_service: ConversationService,
@@ -76,7 +76,7 @@ class TestEndToEndRealtime:
         received: dict[str, asyncio.Event] = {"caleb": asyncio.Event(), "rachel": asyncio.Event()}
         results: dict[str, str] = {}
 
-        async def subscribe_and_capture(user_id: str):
+        async def subscribe_and_capture(user_id: str) -> None:
             async for msg in realtime.subscribe(f"user:{user_id}"):
                 results[user_id] = msg.body
                 received[user_id].set()
@@ -90,10 +90,13 @@ class TestEndToEndRealtime:
 
         await message_service.send_message(conv.id, "caleb", "Hallo Rachel!")
 
-        await asyncio.wait_for(asyncio.gather(
-            asyncio.create_task(received["caleb"].wait()),
-            asyncio.create_task(received["rachel"].wait()),
-        ), timeout=5.0)
+        await asyncio.wait_for(
+            asyncio.gather(
+                asyncio.create_task(received["caleb"].wait()),
+                asyncio.create_task(received["rachel"].wait()),
+            ),
+            timeout=5.0,
+        )
 
         for t in tasks:
             t.cancel()
@@ -111,7 +114,7 @@ class TestEndToEndRealtime:
         received_eve = asyncio.Event()
         results: dict[str, str] = {}
 
-        async def subscribe_eve():
+        async def subscribe_eve() -> None:
             async for msg in realtime.subscribe("user:eve"):
                 results["eve"] = msg.body
                 received_eve.set()
@@ -138,7 +141,7 @@ class TestEndToEndRealtime:
         received = asyncio.Event()
         results: dict[str, str] = {}
 
-        async def subscribe_conversation():
+        async def subscribe_conversation() -> None:
             async for msg in realtime.subscribe(f"conversation:{conv.id}"):
                 results["body"] = msg.body
                 received.set()

@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator
 import strawberry
 from strawberry.types import Info
 
-from chat.api.graphql.context import get_realtime_service
+from chat.api.graphql.context import get_conversation_service, get_principal, get_realtime_service
 from chat.api.graphql.types.conversation import Conversation
 from chat.api.graphql.types.message import Message
 from chat.domain.events import MessageCreatedEvent
@@ -29,26 +29,31 @@ def _to_conversation_graphql(event: MessageCreatedEvent) -> Conversation:
         last_message=event.body,
         last_message_at=event.created_at,
         unread_count=0,
+        channel=event.channel.type,
+        external_address=None,
+        external_display_name=None,
     )
 
 
 @strawberry.type
 class MessageSubscription:
-
     @strawberry.subscription
     async def message_received(
         self, info: Info, conversation_id: strawberry.ID
     ) -> AsyncGenerator[Message]:
         realtime = get_realtime_service(info)
+        principal = await get_principal(info)
+        await get_conversation_service(info).verify_participant(
+            str(conversation_id), principal.user_id
+        )
         channel = f"conversation:{conversation_id}"
         async for event in realtime.subscribe(channel):
             yield _to_message_graphql(event)
 
     @strawberry.subscription
-    async def conversation_updated(
-        self, info: Info, user_id: strawberry.ID
-    ) -> AsyncGenerator[Conversation]:
+    async def conversation_updated(self, info: Info) -> AsyncGenerator[Conversation]:
         realtime = get_realtime_service(info)
-        channel = f"user:{user_id}"
+        principal = await get_principal(info)
+        channel = f"user:{principal.user_id}"
         async for event in realtime.subscribe(channel):
             yield _to_conversation_graphql(event)

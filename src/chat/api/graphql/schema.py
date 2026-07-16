@@ -1,4 +1,5 @@
 import strawberry
+from strawberry import federation
 
 from chat.api.graphql.mutations.conversation_mutation import ConversationMutation
 from chat.api.graphql.mutations.message_mutation import MessageMutation
@@ -22,4 +23,9 @@ class Subscription(MessageSubscription):
     pass
 
 
-schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)
+schema = federation.Schema(
+    query=Query,
+    mutation=Mutation,
+    subscription=Subscription,
+    federation_version="2.11",
+)

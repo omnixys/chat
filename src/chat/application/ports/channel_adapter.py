@@ -7,7 +7,6 @@ from chat.domain.models.message import Message
 
 
 class ChannelAdapter(ABC):
-
     @property
     @abstractmethod
     def channel_type(self) -> ChannelType: ...

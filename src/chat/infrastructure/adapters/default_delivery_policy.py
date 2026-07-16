@@ -5,7 +5,6 @@ from chat.domain.models.message import Message
 
 
 class DefaultDeliveryPolicy(DeliveryPolicy):
-
     async def determine_channels(
         self,
         message: Message,

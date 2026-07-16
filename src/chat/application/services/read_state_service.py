@@ -10,7 +10,6 @@ from chat.domain.utils import utcnow
 
 
 class ReadStateService:
-
     def __init__(
         self,
         session: AsyncSession,
@@ -26,6 +25,7 @@ class ReadStateService:
     async def mark_read(self, conversation_id: str, user_id: str) -> bool:
         if not await self.conversation_repo.is_participant(conversation_id, user_id):
             from chat.domain.errors import NotParticipantError
+
             raise NotParticipantError(user_id, conversation_id)
 
         last_message_id = await self.message_repo.get_last_message_id(conversation_id)

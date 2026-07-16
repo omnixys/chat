@@ -5,7 +5,6 @@ from chat.domain.models.message import Message
 
 
 class MessageDispatcher:
-
     def __init__(self, policy: DeliveryPolicy, router: MessageRouter) -> None:
         self._policy = policy
         self._router = router

@@ -9,9 +9,8 @@ from chat.domain.events import MessageCreatedEvent
 
 
 class InMemoryEventBus(RealtimePublisher):
-
     def __init__(self) -> None:
-        self._queues: dict[str, dict[str, asyncio.Queue]] = {}
+        self._queues: dict[str, dict[str, asyncio.Queue[MessageCreatedEvent]]] = {}
 
     async def publish(self, channel: str, event: MessageCreatedEvent) -> None:
         if channel not in self._queues:
@@ -21,7 +20,7 @@ class InMemoryEventBus(RealtimePublisher):
 
     async def subscribe(self, channel: str) -> AsyncGenerator[MessageCreatedEvent]:
         queue_id = str(uuid.uuid4())
-        queue: asyncio.Queue = asyncio.Queue()
+        queue: asyncio.Queue[MessageCreatedEvent] = asyncio.Queue()
         self._queues.setdefault(channel, {})[queue_id] = queue
         try:
             while True:

@@ -17,6 +17,7 @@ class Message:
         default_factory=lambda: CommunicationChannel(type=ChannelType.IN_APP)
     )
     delivery_status: DeliveryStatus = DeliveryStatus.PENDING
+    provider_message_id: str | None = None
     created_at: datetime = field(default_factory=utcnow)
     edited_at: datetime | None = None
     deleted_at: datetime | None = None

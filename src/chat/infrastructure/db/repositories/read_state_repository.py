@@ -10,17 +10,13 @@ from chat.infrastructure.db.models import ReadStateModel
 
 
 class SqlAlchemyReadStateRepository(ReadStateRepositoryPort):
-
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     async def find(self, conversation_id: str, user_id: str) -> ReadState | None:
-        stmt = (
-            select(ReadStateModel)
-            .where(
-                ReadStateModel.conversation_id == conversation_id,
-                ReadStateModel.user_id == user_id,
-            )
+        stmt = select(ReadStateModel).where(
+            ReadStateModel.conversation_id == conversation_id,
+            ReadStateModel.user_id == user_id,
         )
         result = await self.session.execute(stmt)
         row = result.scalar_one_or_none()

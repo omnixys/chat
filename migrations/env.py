@@ -2,10 +2,11 @@ import asyncio
 from logging.config import fileConfig
 
 from alembic import context
+from omnixys_database import Base
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from chat.config import settings
-from chat.infrastructure.db.models import Base
+from chat.infrastructure.db.models import *  # noqa: F403
 
 config = context.config
 if config.config_file_name is not None:
@@ -28,7 +29,7 @@ def do_run_migrations(connection):
 
 
 async def run_async_migrations() -> None:
-    connectable = create_async_engine(settings.database_url)
+    connectable = create_async_engine(settings.database.url)
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
     await connectable.dispose()

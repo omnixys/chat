@@ -1,0 +1,7 @@
+profiles
+.env
+.venv
+.ruff_cache
+.mypy_cache
+migrations
+scripts

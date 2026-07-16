@@ -4,6 +4,7 @@ Revision ID: 002
 Revises: 001
 Create Date: 2026-07-07
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -25,7 +26,8 @@ def upgrade() -> None:
         "conversation_settings",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column(
-            "conversation_id", sa.String(36),
+            "conversation_id",
+            sa.String(36),
             sa.ForeignKey("conversations.id", ondelete="CASCADE"),
             nullable=False,
             unique=True,

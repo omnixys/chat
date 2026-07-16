@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from chat.domain.enums import ConversationType
+from chat.domain.enums import ChannelType, ConversationType
 from chat.domain.models.conversation_settings import ConversationSettings
 from chat.domain.utils import generate_uuid, utcnow
 
@@ -24,6 +24,9 @@ class Conversation:
     created_at: datetime = field(default_factory=utcnow)
     updated_at: datetime = field(default_factory=utcnow)
     participant_ids: list[str] = field(default_factory=list)
+    channel: ChannelType = ChannelType.IN_APP
+    external_address: str | None = None
+    external_display_name: str | None = None
     last_message: str | None = None
     last_message_at: datetime | None = None
     unread_count: int = 0

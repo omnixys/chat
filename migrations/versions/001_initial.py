@@ -4,6 +4,7 @@ Revision ID: 001
 Revises:
 Create Date: 2026-07-07
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -30,7 +31,8 @@ def upgrade() -> None:
         "conversation_participants",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column(
-            "conversation_id", sa.String(36),
+            "conversation_id",
+            sa.String(36),
             sa.ForeignKey("conversations.id", ondelete="CASCADE"),
             nullable=False,
         ),
@@ -43,7 +45,8 @@ def upgrade() -> None:
         "messages",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column(
-            "conversation_id", sa.String(36),
+            "conversation_id",
+            sa.String(36),
             sa.ForeignKey("conversations.id", ondelete="CASCADE"),
             nullable=False,
         ),
@@ -63,14 +66,16 @@ def upgrade() -> None:
         "read_states",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column(
-            "conversation_id", sa.String(36),
+            "conversation_id",
+            sa.String(36),
             sa.ForeignKey("conversations.id", ondelete="CASCADE"),
             nullable=False,
         ),
         sa.Column("user_id", sa.String(255), nullable=False),
         sa.Column("last_read_at", sa.DateTime(), nullable=True),
         sa.Column(
-            "last_read_message_id", sa.String(36),
+            "last_read_message_id",
+            sa.String(36),
             sa.ForeignKey("messages.id", ondelete="SET NULL"),
             nullable=True,
         ),

@@ -11,7 +11,6 @@ from chat.infrastructure.db.models import MessageModel
 
 
 class SqlAlchemyMessageRepository(MessageRepositoryPort):
-
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
@@ -44,6 +43,7 @@ class SqlAlchemyMessageRepository(MessageRepositoryPort):
             content_type=message.content_type.value,
             channel=message.channel.type.value,
             delivery_status=message.delivery_status.value,
+            provider_message_id=message.provider_message_id,
             created_at=message.created_at,
         )
         self.session.add(model)
@@ -85,6 +85,25 @@ class SqlAlchemyMessageRepository(MessageRepositoryPort):
         msg = await self.get_last_message(conversation_id)
         return msg.id if msg else None
 
+    async def find_by_provider_message_id(self, provider_message_id: str) -> Message | None:
+        result = await self.session.execute(
+            select(MessageModel).where(MessageModel.provider_message_id == provider_message_id)
+        )
+        row = result.scalar_one_or_none()
+        return self._to_domain(row) if row else None
+
+    async def update_delivery_status(
+        self, message_id: str, status: str, provider_message_id: str | None = None
+    ) -> Message | None:
+        model = await self.session.get(MessageModel, message_id)
+        if model is None:
+            return None
+        model.delivery_status = status
+        if provider_message_id:
+            model.provider_message_id = provider_message_id
+        await self.session.flush()
+        return self._to_domain(model)
+
     def _to_domain(self, model: MessageModel) -> Message:
         from chat.domain.enums import MessageContentType
 
@@ -96,6 +115,7 @@ class SqlAlchemyMessageRepository(MessageRepositoryPort):
             content_type=MessageContentType(model.content_type),
             channel=CommunicationChannel(type=ChannelType(model.channel)),
             delivery_status=DeliveryStatus(model.delivery_status),
+            provider_message_id=model.provider_message_id,
             created_at=model.created_at,
             edited_at=model.edited_at,
             deleted_at=model.deleted_at,

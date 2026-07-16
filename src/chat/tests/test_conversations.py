@@ -9,7 +9,6 @@ from chat.domain.errors import (
 
 
 class TestDirectConversation:
-
     async def test_create_direct_conversation(
         self, conversation_service: ConversationService
     ) -> None:
@@ -32,9 +31,7 @@ class TestDirectConversation:
         conv2 = await conversation_service.create_direct_conversation("rachel", "caleb")
         assert conv1.id == conv2.id
 
-    async def test_same_user_rejected(
-        self, conversation_service: ConversationService
-    ) -> None:
+    async def test_same_user_rejected(self, conversation_service: ConversationService) -> None:
         with pytest.raises(SameUserConversationError):
             await conversation_service.create_direct_conversation("caleb", "caleb")
 
@@ -49,7 +46,6 @@ class TestDirectConversation:
 
 
 class TestConversationQueries:
-
     async def test_get_conversation_as_participant(
         self, conversation_service: ConversationService
     ) -> None:
@@ -64,9 +60,7 @@ class TestConversationQueries:
         with pytest.raises(NotParticipantError):
             await conversation_service.get_conversation(conv.id, "eve")
 
-    async def test_conversation_not_found(
-        self, conversation_service: ConversationService
-    ) -> None:
+    async def test_conversation_not_found(self, conversation_service: ConversationService) -> None:
         with pytest.raises(ConversationNotFoundError):
             await conversation_service.get_conversation("non-existent", "caleb")
 

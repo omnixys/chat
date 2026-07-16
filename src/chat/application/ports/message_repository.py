@@ -5,7 +5,6 @@ from chat.domain.models.message import Message
 
 
 class MessageRepository(ABC):
-
     @abstractmethod
     async def find_by_conversation_id(
         self,
@@ -30,3 +29,11 @@ class MessageRepository(ABC):
 
     @abstractmethod
     async def get_last_message_id(self, conversation_id: str) -> str | None: ...
+
+    @abstractmethod
+    async def find_by_provider_message_id(self, provider_message_id: str) -> Message | None: ...
+
+    @abstractmethod
+    async def update_delivery_status(
+        self, message_id: str, status: str, provider_message_id: str | None = None
+    ) -> Message | None: ...

@@ -87,13 +87,13 @@ class SqlAlchemyMessageRepository(MessageRepositoryPort):
 
     async def find_by_provider_message_id(self, provider_message_id: str) -> Message | None:
         result = await self.session.execute(
-            select(MessageModel).where(MessageModel.provider_message_id == provider_message_id)
+            select(MessageModel).where(MessageModel.provider_message_id == provider_message_id),
         )
         row = result.scalar_one_or_none()
         return self._to_domain(row) if row else None
 
     async def update_delivery_status(
-        self, message_id: str, status: str, provider_message_id: str | None = None
+        self, message_id: str, status: str, provider_message_id: str | None = None,
     ) -> Message | None:
         model = await self.session.get(MessageModel, message_id)
         if model is None:

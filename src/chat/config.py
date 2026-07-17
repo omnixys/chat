@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from omnixys_config.settings import AppSettings, CoreSettings
-from pydantic import Field
 from pydantic_settings import SettingsConfigDict
 
 

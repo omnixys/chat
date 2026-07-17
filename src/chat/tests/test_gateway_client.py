@@ -53,7 +53,7 @@ class TestGatewayClientSend:
                     "status": "SENT",
                     "providerMessageId": "evo-123",
                 },
-            )
+            ),
         )
 
         result = await client.send(message, conversation)
@@ -76,7 +76,7 @@ class TestGatewayClientSend:
                     "success": False,
                     "error": "provider_unavailable",
                 },
-            )
+            ),
         )
 
         result = await client.send(message, conversation)
@@ -92,7 +92,7 @@ class TestGatewayClientSend:
         conversation: Conversation,
     ) -> None:
         respx.post("http://localhost:8002/api/v1/messages/send").mock(
-            side_effect=Exception("timeout")
+            side_effect=Exception("timeout"),
         )
 
         result = await client.send(message, conversation)
@@ -108,7 +108,7 @@ class TestGatewayClientSend:
         conversation: Conversation,
     ) -> None:
         route = respx.post("http://localhost:8002/api/v1/messages/send").mock(
-            return_value=Response(200, json={"success": True, "status": "SENT"})
+            return_value=Response(200, json={"success": True, "status": "SENT"}),
         )
 
         await client.send(message, conversation)

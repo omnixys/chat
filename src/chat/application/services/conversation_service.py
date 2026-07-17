@@ -55,7 +55,7 @@ class ConversationService:
         return conversation
 
     async def create_whatsapp_conversation(
-        self, owner_user_id: str, phone_number: str, display_name: str | None = None
+        self, owner_user_id: str, phone_number: str, display_name: str | None = None,
     ) -> Conversation:
         address = normalize_e164(phone_number)
         existing = await self.conversation_repo.find_by_external_address(address)
@@ -91,7 +91,7 @@ class ConversationService:
         read_state = await self.read_state_repo.find(conversation_id, user_id)
         last_read_at = read_state.last_read_at if read_state else None
         conversation.unread_count = await self.message_repo.count_unread(
-            conversation_id, user_id, last_read_at
+            conversation_id, user_id, last_read_at,
         )
 
         participant_ids = await self.conversation_repo.get_participant_ids(conversation_id)

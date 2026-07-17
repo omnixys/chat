@@ -51,7 +51,7 @@ router = MessageRouter(
     {
         ChannelType.IN_APP: in_app_adapter,
         ChannelType.WHATSAPP: whatsapp_adapter,
-    }
+    },
 )
 
 policy = DefaultDeliveryPolicy()
@@ -140,7 +140,7 @@ def ensure_bind_available(host: str, port: int) -> None:
         if exc.errno == errno.EADDRINUSE:
             raise SystemExit(
                 f"Chat cannot start: {host}:{port} is already in use. "
-                "Set PORT or stop the conflicting process."
+                "Set PORT or stop the conflicting process.",
             ) from None
         raise
     finally:

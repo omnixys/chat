@@ -14,7 +14,7 @@ class Message:
     body: str = ""
     content_type: MessageContentType = MessageContentType.TEXT
     channel: CommunicationChannel = field(
-        default_factory=lambda: CommunicationChannel(type=ChannelType.IN_APP)
+        default_factory=lambda: CommunicationChannel(type=ChannelType.IN_APP),
     )
     delivery_status: DeliveryStatus = DeliveryStatus.PENDING
     provider_message_id: str | None = None

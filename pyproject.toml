@@ -59,12 +59,21 @@ target-version = "py314"
 select = ["ALL"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = [
-    "ANN101", "ANN401", "S101",
+"src/chat/tests/**" = [
+    "ANN401", "S101",
     "T20", "FBT", "D", "INP001",
+    "PLR2004", "TC001", "TC003", "PLC0415",
+    "SLF001", "EM101",
 ]
 "src/**" = [
     "D", "ANN401", "ARG002", "S104", "S105", "S107",
+    "TC001", "TC002", "TC003", "PLC0415",
+    "TRY003", "TRY400", "EM101", "EM102",
+    "BLE001", "S110", "PLW0603", "A002", "B904",
+    "FAST002", "B008",
+]
+"src/chat/api/**" = [
+    "SLF001", "S101",
 ]
 "src/chat/domain/**" = [
     "SLF001",

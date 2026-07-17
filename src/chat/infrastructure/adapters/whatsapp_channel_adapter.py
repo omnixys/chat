@@ -37,11 +37,11 @@ class WhatsAppChannelAdapter(ChannelAdapter):
         )
 
     async def send(self, message: Message, conversation: Conversation) -> None:
-        extra = dict(
-            message_id=message.id,
-            conversation_id=message.conversation_id,
-            channel="WHATSAPP",
-        )
+        extra = {
+            "message_id": message.id,
+            "conversation_id": message.conversation_id,
+            "channel": "WHATSAPP",
+        }
         logger.info("adapter_whatsapp_send_start %s", extra)
         result = await self._gateway.send(message, conversation)
         if result.success:

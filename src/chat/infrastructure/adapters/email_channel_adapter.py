@@ -37,11 +37,11 @@ class EmailChannelAdapter(ChannelAdapter):
         )
 
     async def send(self, message: Message, conversation: Conversation) -> None:
-        extra = dict(
-            message_id=message.id,
-            conversation_id=message.conversation_id,
-            channel="EMAIL",
-        )
+        extra = {
+            "message_id": message.id,
+            "conversation_id": message.conversation_id,
+            "channel": "EMAIL",
+        }
         logger.info("adapter_email_send_start %s", extra)
         result = await self._gateway.send(message, conversation)
         if result.success:

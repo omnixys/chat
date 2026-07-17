@@ -26,7 +26,9 @@ class ConversationModel(Base):
     external_address: Mapped[str | None] = mapped_column(String(32), nullable=True, unique=True, index=True)
     external_display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), server_default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), onupdate=func.now(), nullable=False,
+    )
 
     participants = relationship("ConversationParticipantModel", back_populates="conversation", lazy="selectin")
     messages = relationship("MessageModel", back_populates="conversation", lazy="selectin")
@@ -36,7 +38,9 @@ class ConversationParticipantModel(Base):
     __tablename__ = "conversation_participants"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
-    conversation_id: Mapped[str] = mapped_column(String(36), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    conversation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False,
+    )
     user_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), server_default=func.now(), nullable=False)
 
@@ -49,7 +53,9 @@ class ConversationSettingsModel(Base):
     __tablename__ = "conversation_settings"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
-    conversation_id: Mapped[str] = mapped_column(String(36), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, unique=True)
+    conversation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, unique=True,
+    )
     pinned: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     muted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -59,7 +65,9 @@ class MessageModel(Base):
     __tablename__ = "messages"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
-    conversation_id: Mapped[str] = mapped_column(String(36), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    conversation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False,
+    )
     sender_id: Mapped[str] = mapped_column(String(255), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     content_type: Mapped[str] = mapped_column(String(20), nullable=False, default="TEXT")
@@ -79,9 +87,13 @@ class ReadStateModel(Base):
     __tablename__ = "read_states"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
-    conversation_id: Mapped[str] = mapped_column(String(36), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    conversation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False,
+    )
     user_id: Mapped[str] = mapped_column(String(255), nullable=False)
     last_read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
-    last_read_message_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("messages.id", ondelete="SET NULL"), nullable=True)
+    last_read_message_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("messages.id", ondelete="SET NULL"), nullable=True,
+    )
 
     __table_args__ = (UniqueConstraint("conversation_id", "user_id", name="uq_read_state_conversation_user"),)

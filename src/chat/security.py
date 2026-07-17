@@ -28,7 +28,7 @@ def _token_from_connection(
         authorization = str(
             connection_params.get("Authorization")
             or connection_params.get("authorization")
-            or authorization
+            or authorization,
         )
     if authorization.lower().startswith("bearer "):
         return authorization[7:].strip()
@@ -70,7 +70,7 @@ async def authenticate_connection(
         )
     except Exception as exc:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid access token"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid access token",
         ) from exc
     user_id = str(payload.get("sub", ""))
     if not user_id:

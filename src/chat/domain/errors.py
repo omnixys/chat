@@ -7,7 +7,7 @@ class NotParticipantError(ChatError):
         self.user_id = user_id
         self.conversation_id = conversation_id
         super().__init__(
-            f"User '{user_id}' is not a participant of conversation '{conversation_id}'"
+            f"User '{user_id}' is not a participant of conversation '{conversation_id}'",
         )
 
 

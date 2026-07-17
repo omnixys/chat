@@ -12,7 +12,7 @@ from chat.api.internal.inbound import set_realtime
 from chat.config import settings
 from chat.database import get_db
 from chat.domain.enums import ChannelType
-from chat.infrastructure.db.models import Base  # noqa: F401
+from chat.infrastructure.db.models import Base
 from chat.infrastructure.db.repositories.conversation_repository import (
     SqlAlchemyConversationRepository,
 )
@@ -71,7 +71,7 @@ class TestInboundEndpoint:
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
                 missing = await client.get(
-                    "/api/v1/internal/conversations/conv-access/participants/allowed-user"
+                    "/api/v1/internal/conversations/conv-access/participants/allowed-user",
                 )
                 allowed = await client.get(
                     "/api/v1/internal/conversations/conv-access/participants/allowed-user",

@@ -49,11 +49,11 @@ class GatewayClient:
             "metadata": {"conversationId": conversation.id},
         }
 
-        extra = dict(
-            message_id=message.id,
-            conversation_id=message.conversation_id,
-            channel=message.channel.type.value,
-        )
+        extra = {
+            "message_id": message.id,
+            "conversation_id": message.conversation_id,
+            "channel": message.channel.type.value,
+        }
         logger.info("gateway_outbound_start %s", extra)
 
         try:

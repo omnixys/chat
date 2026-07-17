@@ -36,9 +36,9 @@ class SqlAlchemyConversationRepository(ConversationRepositoryPort):
             .where(
                 ConversationModel.id.in_(
                     select(ConversationParticipantModel.conversation_id).where(
-                        ConversationParticipantModel.user_id == user_id
-                    )
-                )
+                        ConversationParticipantModel.user_id == user_id,
+                    ),
+                ),
             )
             .order_by(ConversationModel.updated_at.desc())
         )
@@ -48,7 +48,7 @@ class SqlAlchemyConversationRepository(ConversationRepositoryPort):
 
     async def find_by_external_address(self, address: str) -> Conversation | None:
         result = await self.session.execute(
-            select(ConversationModel).where(ConversationModel.external_address == address)
+            select(ConversationModel).where(ConversationModel.external_address == address),
         )
         row = result.scalar_one_or_none()
         return self._to_domain(row) if row else None
@@ -88,7 +88,7 @@ class SqlAlchemyConversationRepository(ConversationRepositoryPort):
 
     async def get_participant_ids(self, conversation_id: str) -> list[str]:
         stmt = select(ConversationParticipantModel.user_id).where(
-            ConversationParticipantModel.conversation_id == conversation_id
+            ConversationParticipantModel.conversation_id == conversation_id,
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())

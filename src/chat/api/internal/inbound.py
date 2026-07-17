@@ -90,12 +90,12 @@ async def receive_inbound_message(
     x_api_key: str = Header(default=""),
     session: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    extra = dict(
-        channel=payload.channel,
-        from_=payload.from_,
-        user_id=payload.user_id,
-        conversation_id=payload.conversation_id,
-    )
+    extra = {
+        "channel": payload.channel,
+        "from_": payload.from_,
+        "user_id": payload.user_id,
+        "conversation_id": payload.conversation_id,
+    }
 
     try:
         _assert_internal_key(x_api_key)
@@ -125,7 +125,7 @@ async def receive_inbound_message(
         conversation = await conversation_repo.find_by_id(payload.conversation_id)
         if conversation is None:
             logger.warning(
-                "inbound_conversation_not_found reason=unknown_conversation_id %s", extra
+                "inbound_conversation_not_found reason=unknown_conversation_id %s", extra,
             )
             raise HTTPException(
                 status_code=422,
@@ -138,7 +138,7 @@ async def receive_inbound_message(
     if conversation is None and payload.from_:
         try:
             conversation = await conversation_repo.find_by_external_address(
-                normalize_e164(payload.from_)
+                normalize_e164(payload.from_),
             )
         except ValueError:
             conversation = None
@@ -227,11 +227,11 @@ async def receive_delivery_status(
         DeliveryStatus.FAILED: set(),
     }
     if target != message.delivery_status and target not in transitions.get(
-        message.delivery_status, set()
+        message.delivery_status, set(),
     ):
         raise HTTPException(status_code=409, detail={"code": "INVALID_STATUS_TRANSITION"})
     updated = await repo.update_delivery_status(
-        message.id, target.value, payload.provider_message_id
+        message.id, target.value, payload.provider_message_id,
     )
     await session.commit()
     assert updated is not None

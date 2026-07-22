@@ -36,7 +36,7 @@ def validate_production_settings() -> None:
         "CHAT_SERVICE_API_KEY": settings.chat_service_api_key,
         "COMMUNICATION_GATEWAY_API_KEY": settings.communication_gateway_api_key,
         "KEYCLOAK_URL": settings.keycloak.url if settings.auth_enabled else "",
-        "VALKEY_URL": settings.cache.url,
+        "CACHE_URL": settings.cache.url,
     }
     missing = [name for name, value in required.items() if not value]
     if missing:

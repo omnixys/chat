@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from omnixys_config.settings import AppSettings, CoreSettings
+from config.settings import AppSettings, CoreSettings
 from pydantic_settings import SettingsConfigDict
 
 _CHAT_PKG_DIR = Path(__file__).resolve().parent.parent.parent
@@ -22,14 +22,6 @@ class ChatSettings(AppSettings):
     chat_service_api_key: str = ""
 
     auth_enabled: bool = True
-
-    @property
-    def keycloak_issuer(self) -> str:
-        return f"{self.keycloak.url.rstrip('/')}/realms/{self.keycloak.realm}"
-
-    @property
-    def keycloak_jwks_url(self) -> str:
-        return f"{self.keycloak_issuer}/protocol/openid-connect/certs"
 
 
 settings = ChatSettings()

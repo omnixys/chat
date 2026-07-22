@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
 
-import jwt
 from fastapi import HTTPException, Request, WebSocket, status
-from jwt import PyJWKClient
+from security import JwtValidator
 
 from chat.config import settings
 
@@ -16,7 +14,18 @@ class Principal:
     username: str = ""
 
 
-_jwks_client: PyJWKClient | None = None
+_jwt_validator: JwtValidator | None = None
+
+
+def _get_jwt_validator() -> JwtValidator:
+    global _jwt_validator
+    if _jwt_validator is None:
+        _jwt_validator = JwtValidator(
+            jwks_url=settings.keycloak.jwks_url,
+            issuer=settings.keycloak.issuer,
+            audience=settings.keycloak.audience or None,
+        )
+    return _jwt_validator
 
 
 def _token_from_connection(
@@ -54,28 +63,17 @@ async def authenticate_connection(
             detail="authentication required",
         )
 
-    global _jwks_client
-    if _jwks_client is None:
-        _jwks_client = PyJWKClient(settings.keycloak.jwks_url, cache_keys=True)
     try:
-        signing_key = await asyncio.to_thread(_jwks_client.get_signing_key_from_jwt, token)
-        options: dict[str, bool] = {"verify_aud": bool(settings.keycloak.audience)}
-        payload = jwt.decode(
-            token,
-            signing_key.key,
-            algorithms=["RS256"],
-            issuer=settings.keycloak.issuer,
-            audience=settings.keycloak.audience or None,
-            options=options,  # type: ignore[arg-type]
-        )
-    except Exception as exc:
+        claims = await _get_jwt_validator().validate(token)
+    except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid access token",
         ) from exc
-    user_id = str(payload.get("sub", ""))
+
+    user_id = claims.sub or ""
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="token subject missing",
         )
-    return Principal(user_id=user_id, username=str(payload.get("preferred_username", "")))
+    return Principal(user_id=user_id, username=claims.preferred_username or "")

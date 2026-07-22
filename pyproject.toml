@@ -15,12 +15,12 @@ dependencies = [
     "python-multipart>=0.0.20",
     "httpx>=0.28.1",
     "redis>=5.2.0",
-    "PyJWT[crypto]>=2.10.0",
     "omnixys-commons",
     "omnixys-config",
     "omnixys-database",
     "omnixys-observability",
     "omnixys-cache",
+    "omnixys-security",
 ]
 
 [project.scripts]
@@ -45,11 +45,12 @@ dev = [
 ]
 
 [tool.uv.sources]
-omnixys-commons = { url = "https://github.com/omnixys/commons-python/releases/download/v1.0.0/omnixys_commons-1.0.0-py3-none-any.whl" }
-omnixys-config = { url = "https://github.com/omnixys/config-python/releases/download/v1.0.0/omnixys_config-1.0.0-py3-none-any.whl" }
-omnixys-database = { url = "https://github.com/omnixys/database-python/releases/download/v1.0.0/omnixys_database-1.0.0-py3-none-any.whl" }
-omnixys-observability = { url = "https://github.com/omnixys/observability-python/releases/download/v1.0.0/omnixys_observability-1.0.0-py3-none-any.whl" }
-omnixys-cache = { url = "https://github.com/omnixys/cache-python/releases/download/v1.0.0/omnixys_cache-1.0.0-py3-none-any.whl" }
+omnixys-commons = { path = "../../packages/python/commons", editable = true }
+omnixys-config = { path = "../../packages/python/config", editable = true }
+omnixys-database = { path = "../../packages/python/database", editable = true }
+omnixys-observability = { path = "../../packages/python/observability", editable = true }
+omnixys-cache = { path = "../../packages/python/cache", editable = true }
+omnixys-security = { path = "../../packages/python/security", editable = true }
 
 [tool.ruff]
 line-length = 120   

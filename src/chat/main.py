@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 import errno
+import logging
 import socket
+import sys
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from omnixys_observability import (
+from observability import (
     configure_logging,
     configure_tracing,
     instrument_fastapi,
     shutdown_tracing,
     uninstrument_fastapi,
 )
-from omnixys_observability.metrics import ObservabilityMiddleware
+from observability.metrics import ObservabilityMiddleware
+from security import JwtValidator, SecurityMiddleware
 from strawberry.fastapi import GraphQLRouter
 
 from chat.api.graphql.context import GraphQLContext
@@ -26,6 +29,7 @@ from chat.application.services.message_dispatcher import MessageDispatcher
 from chat.application.services.message_router import MessageRouter
 from chat.application.services.message_service import MessageService
 from chat.application.services.read_state_service import ReadStateService
+from chat.banner import print_banner
 from chat.config import settings, validate_production_settings
 from chat.database import manager
 from chat.domain.enums import ChannelType
@@ -61,6 +65,12 @@ dispatcher = MessageDispatcher(policy, router)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     configure_logging()
+    logging.basicConfig(
+        level=settings.core.log_level,
+        format="%(message)s",
+        stream=sys.stderr,
+    )
+    print_banner(settings)
     configure_tracing(
         service_name=settings.core.service_name,
         otlp_endpoint=settings.observability.otlp_endpoint,
@@ -83,9 +93,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 
 def create_application() -> FastAPI:
+    jwt_validator = JwtValidator(
+        jwks_url=settings.keycloak.jwks_url,
+        issuer=settings.keycloak.issuer,
+        audience=settings.keycloak.audience or None,
+    )
+
     app = FastAPI(title="Omnixys Chat", version="0.2.0", lifespan=lifespan)
 
     app.add_middleware(ObservabilityMiddleware)
+    app.add_middleware(
+        SecurityMiddleware,
+        jwt_validator=jwt_validator,
+        exclude_paths=["/health", "/health/live", "/health/ready", "/api/v1/internal"],
+        internal_api_key=settings.core.internal_api_key,
+    )
 
     app.include_router(health_router)
     app.include_router(inbound_router)
@@ -158,6 +180,7 @@ def run() -> None:
     config = hypercorn.config.Config()
     config.bind = [f"{settings.core.host}:{settings.core.port}"]
     config.loglevel = settings.core.log_level.lower()
+    config.use_reloader = settings.hot_reload
 
     ensure_bind_available(settings.core.host, settings.core.port)
     asyncio.run(hypercorn.asyncio.serve(app, config))  # type: ignore[arg-type]

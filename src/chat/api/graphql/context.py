@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from security import current_request_context
 from strawberry.fastapi import BaseContext
 from strawberry.types import Info
 
@@ -42,8 +43,19 @@ def get_realtime_service(info: Info[GraphQLContext, Any]) -> RealtimePublisher:
 
 async def get_principal(info: Info[GraphQLContext, Any]) -> Principal:
     ctx: GraphQLContext = info.context
-    if ctx.principal is None:
-        if ctx.request is None:
-            raise PermissionError("authentication required")
+    if ctx.principal is not None:
+        return ctx.principal
+
+    req_ctx = current_request_context()
+    if req_ctx.is_authenticated and req_ctx.user_id:
+        ctx.principal = Principal(
+            user_id=req_ctx.user_id,
+            username=req_ctx.username or "",
+        )
+        return ctx.principal
+
+    if ctx.request is not None:
         ctx.principal = await authenticate_connection(ctx.request, ctx.connection_params)
-    return ctx.principal
+        return ctx.principal
+
+    raise PermissionError("authentication required")

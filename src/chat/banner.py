@@ -35,6 +35,16 @@ def _mask_url(url: str, *, mask_password: bool = True) -> str:
     return url
 
 
+def _mask_secret(value: str, *, mask: bool = False) -> str:
+    if mask and value:
+        return "****"
+    return value or "—"
+
+
+def _enabled(value: bool) -> str:
+    return "ENABLED" if value else "DISABLED"
+
+
 def _info(label: str, value: str) -> None:
     print(f"  {_CYAN}{label}:{_RESET} {_YELLOW}{value}{_RESET}")  # noqa: T201
 
@@ -50,6 +60,7 @@ def _section(title: str) -> None:
 
 def print_banner(settings: ChatSettings, health: dict[str, Any] | None = None) -> None:
     name = settings.core.service_name.upper()
+    is_prod = settings.core.is_production
 
     banner = f"""
 {_GREEN}  ╔══════════════════════════════════════════════════╗
@@ -58,16 +69,16 @@ def print_banner(settings: ChatSettings, health: dict[str, Any] | None = None) -
   ╚══════════════════════════════════════════════════╝{_RESET}"""
     print(banner)  # noqa: T201
 
-    _section("ANWENDUNGSINFORMATIONEN")
-    _info("Anwendungsname", name)
-    _info("Python-Version", platform.python_version())
+    _section("APPLICATION")
+    _info("Name", name)
+    _info("Python", platform.python_version())
     env_color = _ENV_COLORS.get(settings.core.environment.lower(), _YELLOW)
-    _info("Umgebung", f"{env_color}{settings.core.environment.upper()}{_RESET}")
+    _info("Environment", f"{env_color}{settings.core.environment.upper()}{_RESET}")
     _info("Host", settings.core.host)
     _info("Port", str(settings.core.port))
-    _info("Betriebssystem", f"{platform.system()} ({platform.release()})")
-    _info("Benutzer", getpass.getuser())
-    _info("Hot Reload", "AKTIVIERT" if settings.hot_reload else "DEAKTIVIERT")
+    _info("OS", f"{platform.system()} ({platform.release()})")
+    _info("User", getpass.getuser())
+    _info("Hot Reload", _enabled(settings.hot_reload))
 
     _section("LOGGER")
     _info("Log Level", settings.core.log_level)
@@ -75,56 +86,61 @@ def print_banner(settings: ChatSettings, health: dict[str, Any] | None = None) -
     _section("KEYCLOAK")
     _info("URL", settings.keycloak.url)
     _info("Realm", settings.keycloak.realm)
-    _info("Client", settings.keycloak.client_id)
+    _info("Client ID", settings.keycloak.client_id)
+    _info("Client Secret", _mask_secret(settings.keycloak.client_secret, mask=is_prod))
     _info("Audience", settings.keycloak.audience)
 
     _section("DATABASE")
-    _info("URL", _mask_url(settings.database.url, mask_password=settings.core.is_production))
+    _info("URL", _mask_url(settings.database.url, mask_password=is_prod))
     _info("Pool Size", str(settings.database.pool_size))
     _info("Max Overflow", str(settings.database.max_overflow))
-    _info("Echo", "AKTIVIERT" if settings.database.echo else "DEAKTIVIERT")
+    _info("Echo", _enabled(settings.database.echo))
 
     _section("SECURITY")
-    _info("Stateless", "AKTIVIERT" if settings.security.stateless else "DEAKTIVIERT")
-    _info("CORS Origins", ", ".join(settings.security.cors_allowed_origins) if settings.security.cors_allowed_origins else "KEINE")
-    _info("Rate Limit", f"{settings.security.rate_limit.default_limit}/{settings.security.rate_limit.default_window_ms // 1000}s")
+    _info("Stateless", _enabled(settings.security.stateless))
+    _info("CORS Origins", ", ".join(settings.security.cors_allowed_origins) or "—")
+    if settings.security.rate_limit.enabled:
+        _info("Rate Limit", f"{settings.security.rate_limit.default_limit}/min")
+    else:
+        _info("Rate Limit", "DISABLED")
+    _info("Cookie Secure", str(settings.security.cookie_secure))
 
     _section("VALKEY")
     _info("URL", _mask_url(settings.cache.url))
     _info("Key Prefix", settings.cache.key_prefix)
-    _info("Invalidation", "AKTIVIERT" if settings.cache.invalidation_enabled else "DEAKTIVIERT")
+    _info("Invalidation", _enabled(settings.cache.invalidation_enabled))
 
     _section("KAFKA")
     _info("Bootstrap Servers", settings.kafka.bootstrap_servers)
     _info("Client ID", settings.kafka.client_id)
     _info("Group ID", settings.kafka.group_id)
     _info("ACKs", settings.kafka.acks)
-    _info("DLQ", "AKTIVIERT" if settings.kafka.dlq_enabled else "DEAKTIVIERT")
+    _info("DLQ", _enabled(settings.kafka.dlq_enabled))
 
     _section("OBSERVABILITY")
-    _info("Tracing", "AKTIVIERT" if settings.observability.tracing_enabled else "DEAKTIVIERT")
-    _info("Metrics", "AKTIVIERT" if settings.observability.metrics_enabled else "DEAKTIVIERT")
+    _info("Tracing", _enabled(settings.observability.tracing_enabled))
+    _info("Metrics", _enabled(settings.observability.metrics_enabled))
     _info("Sampling", str(settings.observability.sampling_probability))
     _info("OTLP Endpoint", settings.observability.otlp_endpoint)
-    _info("Tempo Health", settings.observability.tempo_health_url or "KEINE")
-    _info("Prometheus Health", settings.observability.prometheus_health_url or "KEINE")
+    _info("Tempo Health", settings.observability.tempo_health_url or "—")
+    _info("Prometheus Health", settings.observability.prometheus_health_url or "—")
 
     _section("STORAGE")
     _info("Endpoint", settings.storage.endpoint)
     _info("Region", settings.storage.region)
     _info("Bucket", settings.storage.bucket)
-    _info("Public URL", settings.storage.public_url or "KEINE")
+    _info("Public URL", settings.storage.public_url or "—")
 
     _section("COMMUNICATION GATEWAY")
     _info("URL", settings.communication_gateway_url)
 
     if health:
         _section("HEALTH")
-        for name, check in health.get("details", {}).items():
+        for check_name, check in health.get("details", {}).items():
             st = check.get("status", "unknown")
             color = _GREEN if st == "up" else _RED
             latency = check.get("latencyMs")
             suffix = f" ({latency}ms)" if latency is not None else ""
-            _info(name.upper(), f"{color}{st.upper()}{_RESET}{suffix}")
+            _info(check_name.upper(), f"{color}{st.upper()}{_RESET}{suffix}")
 
     print(f"{_GREEN}{'=' * 51}{_RESET}\n")  # noqa: T201

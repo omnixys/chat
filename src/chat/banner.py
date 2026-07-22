@@ -12,7 +12,15 @@ if TYPE_CHECKING:
 _GREEN = "\033[32m"
 _CYAN = "\033[36m"
 _YELLOW = "\033[33m"
+_RED = "\033[31m"
 _RESET = "\033[0m"
+
+_ENV_COLORS = {
+    "local": _GREEN,
+    "development": _GREEN,
+    "staging": _YELLOW,
+    "production": _RED,
+}
 
 
 def _mask_url(url: str, *, mask_password: bool = True) -> str:
@@ -53,7 +61,8 @@ def print_banner(settings: ChatSettings) -> None:
     _section("ANWENDUNGSINFORMATIONEN")
     _info("Anwendungsname", name)
     _info("Python-Version", platform.python_version())
-    _info("Umgebung", settings.core.environment)
+    env_color = _ENV_COLORS.get(settings.core.environment.lower(), _YELLOW)
+    _info("Umgebung", f"{env_color}{settings.core.environment.upper()}{_RESET}")
     _info("Host", settings.core.host)
     _info("Port", str(settings.core.port))
     _info("Betriebssystem", f"{platform.system()} ({platform.release()})")

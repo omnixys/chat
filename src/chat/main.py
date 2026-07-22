@@ -100,7 +100,7 @@ def create_application() -> FastAPI:
     app.add_middleware(
         SecurityMiddleware,
         jwt_validator=jwt_validator,
-        exclude_paths=["/health", "/health/live", "/health/ready", "/api/v1/internal"],
+        exclude_paths=["/health", "/health/live", "/health/ready", "/health/liveness", "/health/readiness", "/api/v1/internal"],
         internal_api_key=settings.core.internal_api_key,
     )
 

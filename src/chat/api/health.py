@@ -1,7 +1,11 @@
+from __future__ import annotations
+
+import time
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, Response, status
-from omnixys_cache import CacheClient
+from cache import CacheClient
 from sqlalchemy import text
 
 from chat.config import settings
@@ -10,29 +14,78 @@ from chat.database import manager
 router = APIRouter()
 
 
-@router.get("/health")
-@router.get("/health/live")
-async def health_live() -> dict[str, str]:
-    return {"status": "ok"}
+def _app_check() -> dict[str, Any]:
+    return {"app": {"status": "up"}}
 
 
-@router.get("/health/ready")
-async def health_ready(response: Response) -> dict[str, Any]:
-    checks: dict[str, bool] = {"database": False, "valkey": False}
+async def _postgres_check() -> dict[str, Any]:
+    started = time.monotonic()
     try:
         async with manager.session_scope() as session:
             await session.execute(text("SELECT 1"))
-        checks["database"] = True
-    except Exception:
-        pass
-    cache = CacheClient(url=settings.cache.url)
+        return {"postgres": {"status": "up", "latencyMs": _elapsed_ms(started)}}
+    except Exception as exc:
+        return {"postgres": {"status": "down", "message": str(exc), "latencyMs": _elapsed_ms(started)}}
+
+
+async def _cache_check() -> dict[str, Any]:
+    cache = CacheClient(url=settings.cache.url, password=settings.cache.password)
+    started = time.monotonic()
     try:
-        checks["valkey"] = await cache.ping()
-    except Exception:
-        pass
+        healthy = await cache.ping()
+        return {"cache": {"status": "up" if healthy else "down", "healthy": healthy, "latencyMs": _elapsed_ms(started)}}
+    except Exception as exc:
+        return {"cache": {"status": "down", "healthy": False, "latencyMs": _elapsed_ms(started), "message": str(exc)}}
     finally:
         await cache.close()
-    ready = all(checks.values())
-    if not ready:
+
+
+async def _http_ping_check(name: str, url: str) -> dict[str, Any]:
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(url)
+            if resp.status_code < 500:
+                return {name: {"status": "up"}}
+            return {name: {"status": "down", "message": f"HTTP {resp.status_code}"}}
+    except Exception as exc:
+        return {name: {"status": "down", "message": str(exc)}}
+
+
+def _elapsed_ms(started: float) -> int:
+    return round((time.monotonic() - started) * 1000)
+
+
+def _aggregate(details: list[dict[str, Any]]) -> dict[str, Any]:
+    merged: dict[str, Any] = {}
+    for d in details:
+        merged.update(d)
+    overall = "ok" if all(v.get("status") == "up" for v in merged.values()) else "error"
+    return {"status": overall, "details": merged}
+
+
+async def _run_readiness_checks() -> dict[str, Any]:
+    checks: list[dict[str, Any]] = [
+        _app_check(),
+        await _postgres_check(),
+        await _cache_check(),
+    ]
+    if settings.keycloak.url:
+        checks.append(await _http_ping_check("keycloak", settings.keycloak.url))
+    if settings.communication_gateway_url:
+        checks.append(await _http_ping_check("communication_gateway", settings.communication_gateway_url))
+    return _aggregate(checks)
+
+
+@router.get("/health/liveness")
+@router.get("/health/live")
+async def health_liveness() -> dict[str, Any]:
+    return _aggregate([_app_check()])
+
+
+@router.get("/health/readiness")
+@router.get("/health/ready")
+async def health_readiness(response: Response) -> dict[str, Any]:
+    result = await _run_readiness_checks()
+    if result["status"] == "error":
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    return {"status": "ok" if ready else "error", "checks": checks}
+    return result

@@ -140,7 +140,7 @@ def print_banner(settings: ChatSettings, health: dict[str, Any] | None = None) -
         _section("HEALTH")
         for check_name, check in health.get("details", {}).items():
             st = check.get("status", "unknown")
-            color = _GREEN if st == "up" else _RED
+            color = _GREEN if st == "up" else _RED if st in ("down", "error") else _YELLOW
             latency = check.get("latencyMs")
             suffix = f" ({latency}ms)" if latency is not None else ""
             _info(check_name.upper(), f"{color}{st.upper()}{_RESET}{suffix}")

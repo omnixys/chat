@@ -82,8 +82,12 @@ async def _run_readiness_checks() -> dict[str, Any]:
         checks.append(await _http_ping_check("communication_gateway", settings.communication_gateway_url))
     if settings.observability.tempo_health_url:
         checks.append(await _tempo_health(settings.observability.tempo_health_url))
+    else:
+        checks.append({"tempo": {"status": "not_configured"}})
     if settings.observability.prometheus_health_url:
         checks.append(await _http_ping_check("prometheus", settings.observability.prometheus_health_url))
+    else:
+        checks.append({"prometheus": {"status": "not_configured"}})
     return _aggregate(checks)
 
 

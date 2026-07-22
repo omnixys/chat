@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import errno
-import logging
 import socket
-import sys
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -44,7 +42,7 @@ from chat.infrastructure.realtime.valkey_event_bus import ValkeyEventBus
 
 logger = __import__("structlog").get_logger(__name__)
 
-realtime = ValkeyEventBus(settings.cache.url)
+realtime = ValkeyEventBus(settings.cache.url, password=settings.cache.password)
 gateway_client = GatewayClient()
 set_realtime(realtime)
 
@@ -64,17 +62,14 @@ dispatcher = MessageDispatcher(policy, router)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    configure_logging()
-    logging.basicConfig(
-        level=settings.core.log_level,
-        format="%(message)s",
-        stream=sys.stderr,
-    )
+    configure_logging(settings.core.log_level)
     print_banner(settings)
     configure_tracing(
         service_name=settings.core.service_name,
         otlp_endpoint=settings.observability.otlp_endpoint,
         environment=settings.core.environment,
+        enabled=settings.observability.tracing_enabled,
+        sampling_probability=settings.observability.sampling_probability,
     )
     instrument_fastapi(app)
 

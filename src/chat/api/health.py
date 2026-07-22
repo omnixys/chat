@@ -51,6 +51,13 @@ async def _http_ping_check(name: str, url: str) -> dict[str, Any]:
         return {name: {"status": "down", "message": str(exc)}}
 
 
+async def _tempo_health(url: str) -> dict[str, Any]:
+    try:
+        return await _http_ping_check("tempo", url)
+    except Exception:
+        return {"tempo": {"status": "down", "message": "unreachable – non-blocking"}}
+
+
 def _elapsed_ms(started: float) -> int:
     return round((time.monotonic() - started) * 1000)
 
@@ -73,6 +80,10 @@ async def _run_readiness_checks() -> dict[str, Any]:
         checks.append(await _http_ping_check("keycloak", settings.keycloak.url))
     if settings.communication_gateway_url:
         checks.append(await _http_ping_check("communication_gateway", settings.communication_gateway_url))
+    if settings.observability.tempo_health_url:
+        checks.append(await _tempo_health(settings.observability.tempo_health_url))
+    if settings.observability.prometheus_health_url:
+        checks.append(await _http_ping_check("prometheus", settings.observability.prometheus_health_url))
     return _aggregate(checks)
 
 

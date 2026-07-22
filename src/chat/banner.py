@@ -106,6 +106,8 @@ def print_banner(settings: ChatSettings) -> None:
     _info("Metrics", "AKTIVIERT" if settings.observability.metrics_enabled else "DEAKTIVIERT")
     _info("Sampling", str(settings.observability.sampling_probability))
     _info("OTLP Endpoint", settings.observability.otlp_endpoint)
+    _info("Tempo Health", settings.observability.tempo_health_url or "KEINE")
+    _info("Prometheus Health", settings.observability.prometheus_health_url or "KEINE")
 
     _section("STORAGE")
     _info("Endpoint", settings.storage.endpoint)

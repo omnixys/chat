@@ -3,6 +3,9 @@ from datetime import datetime
 import strawberry
 
 from chat.domain.enums import ChannelType
+from chat.domain.enums import ConversationType as DomainConversationType
+
+ConversationType = strawberry.enum(DomainConversationType)
 
 
 @strawberry.type
@@ -13,6 +16,7 @@ class Participant:
 @strawberry.type
 class Conversation:
     id: strawberry.ID
+    type: ConversationType
     participants: list[Participant]
     last_message: str | None
     last_message_at: datetime | None

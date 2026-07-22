@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from chat.application.ports.conversation_repository import ConversationRepository
 from chat.application.ports.message_repository import MessageRepository
 from chat.application.ports.read_state_repository import ReadStateRepository
-from chat.domain.enums import ChannelType
+from chat.domain.enums import ChannelType, ConversationType
 from chat.domain.errors import (
     ConversationNotFoundError,
     NotParticipantError,
@@ -29,14 +29,27 @@ class ConversationService:
         self.message_repo = message_repo
         self.read_state_repo = read_state_repo
 
-    async def create_direct_conversation(self, user_a_id: str, user_b_id: str) -> Conversation:
-        key = build_direct_participant_key(user_a_id, user_b_id)
+    async def create_direct_conversation(
+        self,
+        user_a_id: str,
+        user_b_id: str,
+        conversation_type: ConversationType = ConversationType.DIRECT,
+    ) -> Conversation:
+        if conversation_type not in {ConversationType.DIRECT, ConversationType.SUPPORT}:
+            raise ValueError("In-app conversations must be DIRECT or SUPPORT")
+
+        participant_key = build_direct_participant_key(user_a_id, user_b_id)
+        key = (
+            participant_key
+            if conversation_type is ConversationType.DIRECT
+            else f"support:{participant_key}"
+        )
 
         existing = await self.conversation_repo.find_by_participant_pair_key(key)
         if existing is not None:
             return existing
 
-        conversation = Conversation(participant_pair_key=key)
+        conversation = Conversation(type=conversation_type, participant_pair_key=key)
         conversation = await self.conversation_repo.save(conversation)
         await self.conversation_repo.add_participant(conversation.id, user_a_id)
         await self.conversation_repo.add_participant(conversation.id, user_b_id)

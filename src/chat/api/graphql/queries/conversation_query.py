@@ -19,6 +19,7 @@ class ConversationQuery:
         return [
             Conversation(
                 id=strawberry.ID(c.id),
+                type=c.type,
                 participants=_participants_from_ids(c.participant_ids),
                 last_message=c.last_message,
                 last_message_at=c.last_message_at,
@@ -37,6 +38,7 @@ class ConversationQuery:
         c = await service.get_conversation(str(id), principal.user_id)
         return Conversation(
             id=strawberry.ID(c.id),
+            type=c.type,
             participants=_participants_from_ids(c.participant_ids),
             last_message=c.last_message,
             last_message_at=c.last_message_at,

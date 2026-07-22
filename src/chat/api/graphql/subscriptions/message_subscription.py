@@ -4,7 +4,7 @@ import strawberry
 from strawberry.types import Info
 
 from chat.api.graphql.context import get_conversation_service, get_principal, get_realtime_service
-from chat.api.graphql.types.conversation import Conversation
+from chat.api.graphql.types.conversation import Conversation, ConversationType
 from chat.api.graphql.types.message import Message
 from chat.domain.events import MessageCreatedEvent
 
@@ -25,6 +25,7 @@ def _to_message_graphql(event: MessageCreatedEvent) -> Message:
 def _to_conversation_graphql(event: MessageCreatedEvent) -> Conversation:
     return Conversation(
         id=strawberry.ID(event.conversation_id),
+        type=ConversationType.DIRECT,
         participants=[],
         last_message=event.body,
         last_message_at=event.created_at,

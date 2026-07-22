@@ -2,7 +2,7 @@ import strawberry
 from strawberry.types import Info
 
 from chat.api.graphql.context import get_conversation_service, get_principal, get_read_state_service
-from chat.api.graphql.types.conversation import Conversation, Participant
+from chat.api.graphql.types.conversation import Conversation, ConversationType, Participant
 
 
 def _participants_from_ids(ids: list[str]) -> list[Participant]:
@@ -16,12 +16,18 @@ class ConversationMutation:
         self,
         info: Info,
         participant_user_id: str,
+        conversation_type: ConversationType = ConversationType.DIRECT,
     ) -> Conversation:
         service = get_conversation_service(info)
         principal = await get_principal(info)
-        c = await service.create_direct_conversation(principal.user_id, participant_user_id)
+        c = await service.create_direct_conversation(
+            principal.user_id,
+            participant_user_id,
+            conversation_type,
+        )
         return Conversation(
             id=strawberry.ID(c.id),
+            type=c.type,
             participants=_participants_from_ids(c.participant_ids),
             last_message=c.last_message,
             last_message_at=c.last_message_at,
@@ -45,6 +51,7 @@ class ConversationMutation:
         )
         return Conversation(
             id=strawberry.ID(c.id),
+            type=c.type,
             participants=_participants_from_ids(c.participant_ids),
             last_message=c.last_message,
             last_message_at=c.last_message_at,

@@ -1,6 +1,7 @@
 import pytest
 
 from chat.application.services.conversation_service import ConversationService
+from chat.domain.enums import ConversationType
 from chat.domain.errors import (
     ConversationNotFoundError,
     NotParticipantError,
@@ -30,6 +31,36 @@ class TestDirectConversation:
         conv1 = await conversation_service.create_direct_conversation("caleb", "rachel")
         conv2 = await conversation_service.create_direct_conversation("rachel", "caleb")
         assert conv1.id == conv2.id
+
+    async def test_support_conversation_is_distinct_from_direct_conversation(
+        self, conversation_service: ConversationService,
+    ) -> None:
+        direct = await conversation_service.create_direct_conversation("caleb", "admin")
+        support = await conversation_service.create_direct_conversation(
+            "caleb",
+            "admin",
+            ConversationType.SUPPORT,
+        )
+
+        assert support.id != direct.id
+        assert support.type is ConversationType.SUPPORT
+        assert support.participant_pair_key == "support:admin:caleb"
+
+    async def test_support_conversation_is_idempotent(
+        self, conversation_service: ConversationService,
+    ) -> None:
+        first = await conversation_service.create_direct_conversation(
+            "caleb",
+            "admin",
+            ConversationType.SUPPORT,
+        )
+        second = await conversation_service.create_direct_conversation(
+            "admin",
+            "caleb",
+            ConversationType.SUPPORT,
+        )
+
+        assert first.id == second.id
 
     async def test_same_user_rejected(self, conversation_service: ConversationService) -> None:
         with pytest.raises(SameUserConversationError):

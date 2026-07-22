@@ -42,7 +42,9 @@ def _mask_secret(value: str, *, mask: bool = False) -> str:
 
 
 def _enabled(value: bool) -> str:
-    return "ENABLED" if value else "DISABLED"
+    if value:
+        return f"{_GREEN}ENABLED{_RESET}"
+    return f"{_RED}DISABLED{_RESET}"
 
 
 def _info(label: str, value: str) -> None:

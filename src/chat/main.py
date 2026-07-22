@@ -19,7 +19,7 @@ from strawberry.fastapi import GraphQLRouter
 
 from chat.api.graphql.context import GraphQLContext
 from chat.api.graphql.schema import schema
-from chat.api.health import router as health_router
+from chat.api.health import router as health_router, run_health_checks
 from chat.api.internal.inbound import router as inbound_router
 from chat.api.internal.inbound import set_realtime
 from chat.application.services.conversation_service import ConversationService
@@ -63,7 +63,8 @@ dispatcher = MessageDispatcher(policy, router)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     configure_logging(settings.core.log_level)
-    print_banner(settings)
+    health = await run_health_checks()
+    print_banner(settings, health)
     configure_tracing(
         service_name=settings.core.service_name,
         otlp_endpoint=settings.observability.otlp_endpoint,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import getpass
 import platform
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 if TYPE_CHECKING:
@@ -48,7 +48,7 @@ def _section(title: str) -> None:
     print(f"{_GREEN}{'=' * left}{title}{'=' * right}{_RESET}")  # noqa: T201
 
 
-def print_banner(settings: ChatSettings) -> None:
+def print_banner(settings: ChatSettings, health: dict[str, Any] | None = None) -> None:
     name = settings.core.service_name.upper()
 
     banner = f"""
@@ -117,5 +117,14 @@ def print_banner(settings: ChatSettings) -> None:
 
     _section("COMMUNICATION GATEWAY")
     _info("URL", settings.communication_gateway_url)
+
+    if health:
+        _section("HEALTH")
+        for name, check in health.get("details", {}).items():
+            st = check.get("status", "unknown")
+            color = _GREEN if st == "up" else _RED
+            latency = check.get("latencyMs")
+            suffix = f" ({latency}ms)" if latency is not None else ""
+            _info(name.upper(), f"{color}{st.upper()}{_RESET}{suffix}")
 
     print(f"{_GREEN}{'=' * 51}{_RESET}\n")  # noqa: T201

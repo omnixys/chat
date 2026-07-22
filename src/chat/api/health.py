@@ -87,6 +87,10 @@ async def _run_readiness_checks() -> dict[str, Any]:
     return _aggregate(checks)
 
 
+async def run_health_checks() -> dict[str, Any]:
+    return await _run_readiness_checks()
+
+
 @router.get("/health/liveness")
 @router.get("/health/live")
 async def health_liveness() -> dict[str, Any]:

@@ -47,7 +47,7 @@ gateway_client = GatewayClient()
 set_realtime(realtime)
 
 in_app_adapter = InAppChannelAdapter(realtime)
-whatsapp_adapter = WhatsAppChannelAdapter(gateway_client)
+whatsapp_adapter = WhatsAppChannelAdapter(gateway_client, realtime)
 
 router = MessageRouter(
     {

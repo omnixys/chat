@@ -3,7 +3,9 @@ from __future__ import annotations
 import logging
 
 from chat.application.ports.channel_adapter import ChannelAdapter
+from chat.application.ports.realtime_publisher import RealtimePublisher
 from chat.domain.enums import ChannelType, DeliveryStatus
+from chat.domain.events import MessageCreatedEvent
 from chat.domain.models.channel_capabilities import ChannelCapabilities
 from chat.domain.models.conversation import Conversation
 from chat.domain.models.message import Message
@@ -13,8 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class WhatsAppChannelAdapter(ChannelAdapter):
-    def __init__(self, gateway_client: GatewayClient) -> None:
+    def __init__(self, gateway_client: GatewayClient, realtime: RealtimePublisher) -> None:
         self._gateway = gateway_client
+        self._realtime = realtime
 
     @property
     def channel_type(self) -> ChannelType:
@@ -51,3 +54,17 @@ class WhatsAppChannelAdapter(ChannelAdapter):
         else:
             message.delivery_status = DeliveryStatus.FAILED
             logger.warning("adapter_whatsapp_send_failed error=%s %s", result.error, extra)
+
+        event = MessageCreatedEvent(
+            message_id=message.id,
+            conversation_id=message.conversation_id,
+            sender_id=message.sender_id,
+            body=message.body,
+            content_type=message.content_type,
+            channel=message.channel,
+            delivery_status=message.delivery_status,
+            created_at=message.created_at,
+        )
+        await self._realtime.publish(f"conversation:{message.conversation_id}", event)
+        for uid in conversation.participant_ids:
+            await self._realtime.publish(f"user:{uid}", event)

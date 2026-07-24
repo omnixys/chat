@@ -130,7 +130,7 @@ export default {
       "@semantic-release/exec",
       {
         prepareCmd:
-          'sed -i "" "s/^version = .*/version = \\"${nextRelease.version}\\"/" pyproject.toml && uv lock',
+          "sed -i.bak 's/^version = \".*\"/version = \"${nextRelease.version}\"/' pyproject.toml && rm -f pyproject.toml.bak && uv lock",
       },
     ],
 

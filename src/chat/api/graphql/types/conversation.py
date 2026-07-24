@@ -16,7 +16,7 @@ class Participant:
 @strawberry.type
 class Conversation:
     id: strawberry.ID
-    type: ConversationType
+    type: ConversationType  # type: ignore[valid-type]
     participants: list[Participant]
     last_message: str | None
     last_message_at: datetime | None

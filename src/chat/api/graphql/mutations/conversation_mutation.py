@@ -16,7 +16,7 @@ class ConversationMutation:
         self,
         info: Info,
         participant_user_id: str,
-        conversation_type: ConversationType = ConversationType.DIRECT,
+        conversation_type: ConversationType = ConversationType.DIRECT,  # type: ignore[valid-type]
     ) -> Conversation:
         service = get_conversation_service(info)
         principal = await get_principal(info)

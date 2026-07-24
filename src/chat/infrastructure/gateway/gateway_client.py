@@ -32,7 +32,7 @@ class GatewayClient:
         self._client = httpx.AsyncClient(
             base_url=settings.communication_gateway_url.rstrip("/"),
             headers={
-                "x-api-key": settings.communication_gateway_api_key,
+                "x-internal-api-key": settings.communication_gateway_api_key,
                 "Content-Type": "application/json",
             },
             timeout=httpx.Timeout(settings.communication_gateway_timeout),
@@ -60,7 +60,6 @@ class GatewayClient:
             response = await self._client.post(
                 "/api/v1/messages/send",
                 json=payload,
-                headers={"authorization": f"Bearer {settings.communication_gateway_api_key}"},
             )
             data = response.json()
             logger.info(

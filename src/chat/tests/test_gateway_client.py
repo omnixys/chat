@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+from unittest.mock import AsyncMock
+
 import pytest
 import respx
 from httpx import Response
 
+from chat.application.ports.realtime_publisher import RealtimePublisher
 from chat.domain.enums import ChannelType, DeliveryStatus
+from chat.domain.events import MessageCreatedEvent
 from chat.domain.models.communication_channel import CommunicationChannel
 from chat.domain.models.conversation import Conversation
 from chat.domain.models.message import Message
-from chat.infrastructure.gateway.gateway_client import GatewayClient
+from chat.infrastructure.adapters.whatsapp_channel_adapter import WhatsAppChannelAdapter
+from chat.infrastructure.gateway.gateway_client import GatewayClient, GatewayResult
 
 
 @pytest.fixture
@@ -125,3 +131,45 @@ class TestGatewayClientSend:
         assert payload["body"] == "Hello"
         assert payload["contentType"] == "TEXT"
         assert payload["metadata"]["conversationId"] == "conv-1"
+
+
+class RecordingRealtimePublisher(RealtimePublisher):
+    def __init__(self) -> None:
+        self.published: list[tuple[str, MessageCreatedEvent]] = []
+
+    async def publish(self, channel: str, event: MessageCreatedEvent) -> None:
+        self.published.append((channel, event))
+
+    async def subscribe(self, channel: str) -> AsyncGenerator[MessageCreatedEvent]:
+        del channel
+        if False:
+            yield self.published[0][1]
+
+    async def unsubscribe(self, channel: str, queue_id: str) -> None:
+        del channel, queue_id
+
+
+class TestWhatsAppRealtime:
+    async def test_successful_send_publishes_each_realtime_channel_once(
+        self,
+        message: Message,
+        conversation: Conversation,
+    ) -> None:
+        gateway = AsyncMock(spec=GatewayClient)
+        gateway.send.return_value = GatewayResult(
+            success=True,
+            status=DeliveryStatus.SENT,
+            provider_message_id="provider-1",
+        )
+        realtime = RecordingRealtimePublisher()
+        adapter = WhatsAppChannelAdapter(gateway, realtime)
+
+        await adapter.send(message, conversation)
+
+        assert [channel for channel, _event in realtime.published] == [
+            "conversation:conv-1",
+            "user:user-1",
+            "user:user-2",
+        ]
+        assert message.delivery_status is DeliveryStatus.SENT
+        assert message.provider_message_id == "provider-1"

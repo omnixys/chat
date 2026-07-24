@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from omnixys_database import Base
+from database import Base
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

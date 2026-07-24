@@ -7,10 +7,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from observability import (
-    configure_logging,
-    configure_tracing,
+    configure_observability,
     instrument_fastapi,
-    shutdown_tracing,
+    shutdown_observability,
     uninstrument_fastapi,
 )
 from observability.metrics import ObservabilityMiddleware
@@ -62,16 +61,16 @@ dispatcher = MessageDispatcher(policy, router)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    configure_logging(settings.core.log_level)
-    health = await run_health_checks()
-    print_banner(settings, health)
-    configure_tracing(
+    configure_observability(
         service_name=settings.core.service_name,
         otlp_endpoint=settings.observability.otlp_endpoint,
         environment=settings.core.environment,
-        enabled=settings.observability.tracing_enabled,
+        log_level=settings.core.log_level,
+        tracing_enabled=settings.observability.tracing_enabled,
         sampling_probability=settings.observability.sampling_probability,
     )
+    health = await run_health_checks()
+    print_banner(settings, health)
     instrument_fastapi(app)
 
     validate_production_settings()
@@ -82,7 +81,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     finally:
         logger.info("application_shutdown")
         uninstrument_fastapi(app)
-        shutdown_tracing()
+        shutdown_observability()
         await gateway_client.close()
         await realtime.close()
         await manager.close()

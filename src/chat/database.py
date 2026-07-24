@@ -1,6 +1,6 @@
 from collections.abc import AsyncGenerator
 
-from omnixys_database import DatabaseSessionManager
+from database import DatabaseSessionManager
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from chat.config import settings

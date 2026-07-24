@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from chat.api.internal.inbound import router as inbound_router
 from chat.api.internal.inbound import set_realtime
+from chat.application.services.conversation_service import ConversationService
 from chat.config import settings
 from chat.database import get_db
 from chat.domain.enums import ChannelType
@@ -56,6 +57,56 @@ def app() -> FastAPI:
 
 
 class TestInboundEndpoint:
+    async def test_whatsapp_creator_passes_participant_access_check(
+        self,
+        app: FastAPI,
+    ) -> None:
+        original_chat_key = settings.chat_service_api_key
+        owner_id = "keycloak-sub-owner"
+        async with session_factory() as session:
+            conversation_repo = SqlAlchemyConversationRepository(session)
+            from chat.infrastructure.db.repositories.message_repository import (
+                SqlAlchemyMessageRepository,
+            )
+            from chat.infrastructure.db.repositories.read_state_repository import (
+                SqlAlchemyReadStateRepository,
+            )
+
+            service = ConversationService(
+                session,
+                conversation_repo,
+                SqlAlchemyMessageRepository(session),
+                SqlAlchemyReadStateRepository(session),
+            )
+            conversation = await service.create_whatsapp_conversation(
+                owner_id,
+                "+49123456789",
+                "WhatsApp Guest",
+            )
+            assert await conversation_repo.is_participant(conversation.id, owner_id)
+
+        settings.chat_service_api_key = "chat-secret"
+        try:
+            transport = ASGITransport(app=app)
+            async with AsyncClient(transport=transport, base_url="http://test") as client:
+                allowed = await client.get(
+                    f"/api/v1/internal/conversations/{conversation.id}/participants/{owner_id}",
+                    headers={"x-api-key": "chat-secret"},
+                )
+                denied = await client.get(
+                    f"/api/v1/internal/conversations/{conversation.id}/participants/other-user",
+                    headers={"x-api-key": "chat-secret"},
+                )
+                missing = await client.get(
+                    f"/api/v1/internal/conversations/missing/participants/{owner_id}",
+                    headers={"x-api-key": "chat-secret"},
+                )
+            assert allowed.status_code == 204
+            assert denied.status_code == 403
+            assert missing.status_code == 404
+        finally:
+            settings.chat_service_api_key = original_chat_key
+
     async def test_participant_access_check_is_protected(self, app: FastAPI) -> None:
         async with session_factory() as session:
             repo = SqlAlchemyConversationRepository(session)

@@ -4,8 +4,8 @@ import time
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Response, status
 from cache import CacheClient
+from fastapi import APIRouter, Response, status
 from sqlalchemy import text
 
 from chat.config import settings
@@ -55,7 +55,7 @@ async def _tempo_health(url: str) -> dict[str, Any]:
     try:
         return await _http_ping_check("tempo", url)
     except Exception:
-        return {"tempo": {"status": "down", "message": "unreachable – non-blocking"}}
+        return {"tempo": {"status": "down", "message": "unreachable - non-blocking"}}
 
 
 def _elapsed_ms(started: float) -> int:

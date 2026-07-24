@@ -24,6 +24,8 @@ on:
     branches:
       - main
       - '!release'
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - '**'
@@ -53,7 +55,8 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       !contains(github.event.head_commit.message, 'chore(version)') &&
-      !contains(github.event.head_commit.message, 'docs(changelog)')
+      !contains(github.event.head_commit.message, 'docs(changelog)') &&
+      !contains(github.event.head_commit.message, 'chore(release)')
 
     steps:
       - name: Checkout Repository
@@ -89,56 +92,46 @@ jobs:
   release:
     needs: ci
     if: github.ref == 'refs/heads/main'
-    outputs:
-      released: ${{ steps.version.outputs.released }}
-      version: ${{ steps.version.outputs.version }}
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 25
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Read version from pyproject.toml
-        id: version
+      - name: Install semantic-release plugins
         run: |
-          VERSION=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-          DATE=$(date -u +'%Y-%m-%d')
+          npm install -g \
+            semantic-release \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/changelog \
+            @semantic-release/exec \
+            @semantic-release/git \
+            @semantic-release/github \
+            conventional-changelog-conventionalcommits
 
-          echo "CURRENT_VERSION=$VERSION" >> $GITHUB_ENV
-          echo "CURRENT_DATE=$DATE" >> $GITHUB_ENV
-
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "date=$DATE" >> $GITHUB_OUTPUT
-          echo "released=true" >> $GITHUB_OUTPUT
-
-      - name: Update repo variable
+      - name: Run semantic-release
         env:
-          GH_TOKEN: ${{ secrets.OMNIXYS_TOKEN }}
-        run: |
-          gh variable set CURRENT_VERSION \
-            --body "$CURRENT_VERSION" \
-            --repo omnixys/${{ vars.SERVICE }}-service
-
-      - name: Update org variable
-        env:
-          GH_TOKEN: ${{ secrets.OMNIXYS_TOKEN }}
-        run: |
-          gh variable set CURRENT_DATE \
-            --body "$CURRENT_DATE" \
-            --org omnixys \
-            --visibility all
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
 
   push-docker:
     needs: release
-    if: needs.release.outputs.released == 'true'
+    if: startsWith(github.ref, 'refs/tags/v')
     env:
-      CURRENT_VERSION: ${{ needs.release.outputs.version }}
+      CURRENT_VERSION: ${{ github.ref_name }}
     name: Build & Push Multi-Arch Images (Docker)
     runs-on: ubuntu-latest
 
@@ -189,17 +182,17 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.IMAGE_NAME }}:${{ needs.release.outputs.version }}
+            ${{ env.IMAGE_NAME }}:${{ env.CURRENT_VERSION }}
             ${{ env.IMAGE_NAME }}:latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.version=${{ needs.release.outputs.version }}
+            org.opencontainers.image.version=${{ env.CURRENT_VERSION }}
             org.opencontainers.image.description=Omnixys Microservice – ${{ env.IMAGE_NAME }}
             org.opencontainers.image.licenses=GPL-3.0-or-later
           build-args: |
             REVISION=${{ github.sha }}
             CREATED=${{ vars.CURRENT_DATE }}
-            APP_VERSION=${{ needs.release.outputs.version }}
+            APP_VERSION=${{ env.CURRENT_VERSION }}
             APP_NAME=${{ vars.SERVICE }}
             PYTHON_VERSION=${{ env.PYTHON_VERSION }}
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -211,14 +204,14 @@ jobs:
       - name: Sign Docker Image with cosign (OIDC/GitHub)
         if: steps.check_tag.outputs.exists == 'false'
         run: |
-          cosign sign --yes --recursive ${{ env.IMAGE_NAME }}:${{ needs.release.outputs.version }}
+          cosign sign --yes --recursive ${{ env.IMAGE_NAME }}:${{ env.CURRENT_VERSION }}
           cosign sign --yes --recursive ${{ env.IMAGE_NAME }}:latest
 
   push-github:
     needs: release
-    if: needs.release.outputs.released == 'true'
+    if: startsWith(github.ref, 'refs/tags/v')
     env:
-      CURRENT_VERSION: ${{ needs.release.outputs.version }}
+      CURRENT_VERSION: ${{ github.ref_name }}
     name: Build & Push Multi-Arch Images (Github)
     runs-on: ubuntu-latest
 
@@ -270,17 +263,17 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.IMAGE_NAME_REPOSITORY }}:${{ needs.release.outputs.version }}
+            ${{ env.IMAGE_NAME_REPOSITORY }}:${{ env.CURRENT_VERSION }}
             ${{ env.IMAGE_NAME_REPOSITORY }}:latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.version=${{ needs.release.outputs.version }}
+            org.opencontainers.image.version=${{ env.CURRENT_VERSION }}
             org.opencontainers.image.description=Omnixys Microservice – ${{ env.IMAGE_NAME }}
             org.opencontainers.image.licenses=GPL-3.0-or-later
           build-args: |
             REVISION=${{ github.sha }}
             CREATED=${{ vars.CURRENT_DATE }}
-            APP_VERSION=${{ needs.release.outputs.version }}
+            APP_VERSION=${{ env.CURRENT_VERSION }}
             APP_NAME=${{ vars.SERVICE }}
             PYTHON_VERSION=${{ env.PYTHON_VERSION }}
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -292,5 +285,5 @@ jobs:
       - name: Sign Docker Image with cosign (OIDC/GitHub)
         if: steps.check_tag.outputs.exists == 'false'
         run: |
-          cosign sign --yes --recursive ${{ env.IMAGE_NAME_REPOSITORY }}:${{ needs.release.outputs.version }}
+          cosign sign --yes --recursive ${{ env.IMAGE_NAME_REPOSITORY }}:${{ env.CURRENT_VERSION }}
           cosign sign --yes --recursive ${{ env.IMAGE_NAME_REPOSITORY }}:latest

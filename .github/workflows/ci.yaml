@@ -75,7 +75,7 @@ jobs:
             uv-${{ runner.os }}-
 
       - name: Install dependencies
-        run: uv sync --frozen
+        run: uv sync --frozen --no-sources
 
       - name: Lint check
         run: uv run ruff check src/

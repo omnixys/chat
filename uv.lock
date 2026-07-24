@@ -278,12 +278,12 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.137.1" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "hypercorn", specifier = ">=0.18.0" },
-    { name = "omnixys-cache", editable = "../../packages/python/cache" },
-    { name = "omnixys-commons", editable = "../../packages/python/commons" },
-    { name = "omnixys-config", editable = "../../packages/python/config" },
-    { name = "omnixys-database", editable = "../../packages/python/database" },
-    { name = "omnixys-observability", editable = "../../packages/python/observability" },
-    { name = "omnixys-security", editable = "../../packages/python/security" },
+    { name = "omnixys-cache", git = "https://github.com/omnixys/cache-python.git" },
+    { name = "omnixys-commons", git = "https://github.com/omnixys/commons-python.git" },
+    { name = "omnixys-config", git = "https://github.com/omnixys/config-python.git" },
+    { name = "omnixys-database", git = "https://github.com/omnixys/database-python.git" },
+    { name = "omnixys-observability", git = "https://github.com/omnixys/observability-python.git" },
+    { name = "omnixys-security", git = "https://github.com/omnixys/security-python.git" },
     { name = "pydantic", specifier = ">=2.13.4" },
     { name = "pydantic-settings", specifier = ">=2.14.1" },
     { name = "python-multipart", specifier = ">=0.0.20" },
@@ -729,68 +729,34 @@ wheels = [
 
 [[package]]
 name = "omnixys-cache"
-source = { editable = "../../packages/python/cache" }
+version = "3.0.4"
+source = { git = "https://github.com/omnixys/cache-python.git#584056627ec8977ae27b21066f6408de90c8c317" }
 dependencies = [
     { name = "redis" },
 ]
 
-[package.metadata]
-requires-dist = [{ name = "redis", specifier = ">=5.4.0" }]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "dishka", specifier = ">=1.10.1" },
-    { name = "mypy", specifier = ">=2.3.0" },
-    { name = "pytest", specifier = ">=9.1.0" },
-    { name = "pytest-asyncio", specifier = ">=0.26.0" },
-    { name = "ruff", specifier = ">=0.15.21" },
-]
-
 [[package]]
 name = "omnixys-commons"
-source = { editable = "../../packages/python/commons" }
+version = "3.0.0"
+source = { git = "https://github.com/omnixys/commons-python.git#ea133e6659bf2960a0ce355a5e67f45bc3d8dc7b" }
 dependencies = [
     { name = "pydantic" },
 ]
 
-[package.metadata]
-requires-dist = [{ name = "pydantic", specifier = ">=2.13.4" }]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=1.18.2" },
-    { name = "pytest", specifier = ">=9.1.0" },
-    { name = "pytest-asyncio", specifier = ">=0.26.0" },
-    { name = "ruff", specifier = ">=0.15.17" },
-]
-
 [[package]]
 name = "omnixys-config"
-source = { editable = "../../packages/python/config" }
+version = "3.0.0"
+source = { git = "https://github.com/omnixys/config-python.git#4f398adb0b1630fe3647b4539f63ac9c160731d0" }
 dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
 ]
 
-[package.metadata]
-requires-dist = [
-    { name = "pydantic", specifier = "==2.13.4" },
-    { name = "pydantic-settings", specifier = "==2.14.1" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=2.3.0" },
-    { name = "pytest", specifier = ">=9.1.0" },
-    { name = "pytest-asyncio", specifier = ">=0.26.0" },
-    { name = "ruff", specifier = ">=0.15.21" },
-]
-
 [[package]]
 name = "omnixys-database"
-source = { editable = "../../packages/python/database" }
+version = "3.0.0"
+source = { git = "https://github.com/omnixys/database-python.git#938ac3d6423e14d3d06570e065acee0be0e25ea9" }
 dependencies = [
     { name = "asyncpg" },
     { name = "greenlet" },
@@ -799,26 +765,10 @@ dependencies = [
     { name = "sqlalchemy" },
 ]
 
-[package.metadata]
-requires-dist = [
-    { name = "asyncpg", specifier = ">=0.31.0" },
-    { name = "greenlet", specifier = ">=3.5.1" },
-    { name = "psycopg", specifier = ">=3.3.4" },
-    { name = "psycopg-binary", specifier = ">=3.3.4" },
-    { name = "sqlalchemy", specifier = ">=2.0.51" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=2.3.0" },
-    { name = "pytest", specifier = ">=9.1.0" },
-    { name = "pytest-asyncio", specifier = ">=0.26.0" },
-    { name = "ruff", specifier = ">=0.15.21" },
-]
-
 [[package]]
 name = "omnixys-observability"
-source = { editable = "../../packages/python/observability" }
+version = "2.0.4"
+source = { git = "https://github.com/omnixys/observability-python.git#d00d72e5d41f1a41e0be3ad733ca709cb6813a60" }
 dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
@@ -835,53 +785,13 @@ dependencies = [
     { name = "structlog" },
 ]
 
-[package.metadata]
-requires-dist = [
-    { name = "fastapi", specifier = ">=0.115.0" },
-    { name = "httpx", specifier = ">=0.28.0" },
-    { name = "opentelemetry-api", specifier = ">=1.42.1" },
-    { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.42.1" },
-    { name = "opentelemetry-instrumentation", specifier = ">=0.63b1" },
-    { name = "opentelemetry-instrumentation-asgi", specifier = ">=0.63b1" },
-    { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.63b1" },
-    { name = "opentelemetry-instrumentation-httpx", specifier = ">=0.63b1" },
-    { name = "opentelemetry-instrumentation-logging", specifier = ">=0.63b1" },
-    { name = "opentelemetry-instrumentation-sqlalchemy", specifier = ">=0.63b1" },
-    { name = "opentelemetry-sdk", specifier = ">=1.42.1" },
-    { name = "prometheus-client", specifier = ">=0.25.0" },
-    { name = "structlog", specifier = ">=26.1.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=2.3.0" },
-    { name = "pytest", specifier = ">=9.1.0" },
-    { name = "pytest-asyncio", specifier = ">=0.26.0" },
-    { name = "ruff", specifier = ">=0.15.21" },
-]
-
 [[package]]
 name = "omnixys-security"
-source = { editable = "../../packages/python/security" }
+version = "3.0.0"
+source = { git = "https://github.com/omnixys/security-python.git#8aab887415d18002166017633794d31dba5733eb" }
 dependencies = [
     { name = "httpx" },
     { name = "python-jose", extra = ["cryptography"] },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "httpx", specifier = ">=0.28.0" },
-    { name = "python-jose", extras = ["cryptography"], specifier = ">=3.5.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=2.3.0" },
-    { name = "pydantic", specifier = ">=2.13.4" },
-    { name = "pytest", specifier = ">=9.1.0" },
-    { name = "pytest-asyncio", specifier = ">=0.26.0" },
-    { name = "ruff", specifier = ">=0.15.21" },
-    { name = "types-python-jose", specifier = ">=3.5.0.20260408" },
 ]
 
 [[package]]

@@ -47,14 +47,6 @@ dev = [
     "respx>=0.22.0",
 ]
 
-[tool.uv.sources]
-omnixys-commons = { path = "../../packages/python/commons", editable = true }
-omnixys-config = { path = "../../packages/python/config", editable = true }
-omnixys-database = { path = "../../packages/python/database", editable = true }
-omnixys-observability = { path = "../../packages/python/observability", editable = true }
-omnixys-cache = { path = "../../packages/python/cache", editable = true }
-omnixys-security = { path = "../../packages/python/security", editable = true }
-
 [tool.ruff]
 line-length = 120   
 target-version = "py314"

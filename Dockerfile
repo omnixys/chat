@@ -13,7 +13,7 @@
 #
 # For more information, visit <https://www.gnu.org/licenses/>.
 # ---------------------------------------------------------------------------------------
-# Dockerfile – Omnixys Chat Service
+# Dockerfile – Omnixys Communication Gateway Service
 # Multi-stage build optimized for security, reproducibility, and minimal runtime size.
 # ---------------------------------------------------------------------------------------
 # syntax=docker/dockerfile:1.14.0
@@ -27,6 +27,9 @@ ARG PYTHON_VERSION=3.14
 # ---------------------------------------------------------------------------------------
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 RUN pip install --no-cache-dir uv
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/*
 
 # ---------------------------------------------------------------------------------------
 # Stage 1: Production dependencies
@@ -110,4 +113,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
 # ----- Start command -----
 # tini ensures proper signal forwarding and zombie process cleanup.
 ENTRYPOINT ["tini", "--"]
-CMD ["sh", "-c", "alembic upgrade head && exec chat"]
+CMD ["sh", "-c", "alembic upgrade head && exec gateway"]
